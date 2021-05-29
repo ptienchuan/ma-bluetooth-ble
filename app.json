@@ -1,0 +1,12 @@
+{
+  "name": "ma-bluetooth-ble",
+  "displayName": "ma-bluetooth-ble",
+  "expo": {
+    "name": "ma-bluetooth-ble",
+    "slug": "ma-bluetooth-ble",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
