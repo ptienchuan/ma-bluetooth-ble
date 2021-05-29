@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Button, SafeAreaView } from "react-native";
-import { BleManager } from "react-native-ble-plx";
+import { BleManager, Device } from "react-native-ble-plx";
 
 const bleManager = new BleManager();
 
 export default function App() {
   const [isScanning, setIsScanning] = useState(false);
-  const [devices, setDevices] = useState<string[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
 
   const startScanning = () => {
+    setDevices([]);
     setIsScanning(true);
     bleManager.startDeviceScan(
       null,
@@ -18,12 +19,16 @@ export default function App() {
           stopScanning();
           return console.log(error);
         }
-        if (scannedDevice) {
-          const { id, name } = scannedDevice;
-          console.log({ id, name });
-          if (name) {
-            setDevices(devices.concat([name]));
-          }
+        if (scannedDevice && scannedDevice.name) {
+          setDevices((prevState) => {
+            const deviceIndex = prevState.findIndex(
+              ({ name }) => name === scannedDevice.name
+            );
+            if (deviceIndex < 0) {
+              return [...prevState, scannedDevice];
+            }
+            return prevState;
+          });
         }
       }
     );
@@ -31,8 +36,20 @@ export default function App() {
 
   const stopScanning = () => {
     setIsScanning(false);
-    setDevices([]);
     bleManager.stopDeviceScan();
+  };
+
+  const selectDevice = async (device: Device) => {
+    const selectedDevice = await bleManager.connectToDevice(device.id);
+    console.log({ selectedDevice });
+  };
+
+  const getListConnected = async () => {
+    console.log("GET CONNECTED");
+    setDevices([]);
+    const connectedDevices = await bleManager.connectedDevices([]);
+    console.log("GET CONNECTED");
+    setDevices(connectedDevices);
   };
 
   return (
@@ -44,15 +61,20 @@ export default function App() {
             <Button title="Stop scanning" onPress={stopScanning} />
           </>
         ) : (
-          <Button title="Scan" onPress={startScanning} />
+          <>
+            <Button title="Scan" onPress={startScanning} />
+            <Button title="Connected" onPress={getListConnected} />
+          </>
         )}
       </View>
       <View style={styles.devices}>
         <Text style={styles.title}>LIST DEVICES</Text>
-        {devices.map((deviceName, index) => (
-          <Text style={styles.device} key={index}>
-            {deviceName}
-          </Text>
+        {devices.map((device) => (
+          <Button
+            key={device.id}
+            title={device.name || ""}
+            onPress={() => selectDevice(device)}
+          />
         ))}
       </View>
     </SafeAreaView>
